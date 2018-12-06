@@ -9,6 +9,7 @@
 
         function init() {
           jQuery("#roomContainer").hide();  
+          jQuery("#logoutButton").hide();  
           jQuery("#alertContainer").hide();
           jQuery("#connectButton").hide();
           if(!("WebSocket" in window)){  
@@ -19,7 +20,7 @@
         };
 
         function connect() {
-        wsHost = "ws://" + window.location.host + "/websocket";
+        wsHost = "ws://" + window.location.host + "/websocket/" + jQuery("#username").val();
         websocket = new WebSocket(wsHost);
         websocket.onopen = function(evt) { onOpen(evt) }; 
         websocket.onclose = function(evt) { onClose(evt) }; 
@@ -27,16 +28,21 @@
         websocket.onerror = function(evt) { onError(evt) }; 
       }; 
 
-      function onOpen(evt) { 
+      function onOpen(evt) {
+        websocket.send("login");
         jQuery('#roomContainer').fadeIn('slow');
+        jQuery('#loginContainer').fadeOut('slow');
+        jQuery('#logoutButton').fadeIn('slow');
       };  
 
       function onClose(evt) { 
         jQuery('#roomContainer').fadeOut('slow');
+        jQuery('#loginContainer').fadeIn('slow');
+        jQuery('logoutButton').fadeOut('slow');
         showAlert('<span style="color: red;">Websocket connection has been closed!</span>');
       };  
 
-      function onMessage(evt) { 
+      function onMessage(evt) {
         showMessage(jQuery.parseJSON(evt.data));
       };  
 
@@ -55,12 +61,16 @@
       };
 
       function showMessage(data) {
-        jQuery('#chatContainer').append('<div>' + data.sender + ' -> ' + data.msg + '</div>');
+        jQuery('#chatContainer').append('<div>' + data.sender + ': ' + data.msg + '</div>');
       };
 
       function showAlert(txt) {
         jQuery("#alertContainer").html(txt);
         jQuery("#alertContainer").show();
+      }
+      function logout() {
+        websocket.send("logout");
+        websocket.close();
       }
       </script>
       <style>
@@ -73,8 +83,15 @@
   </head>
   <body>
     <div id="alertContainer"></div>
-    <input id="connectButton" type="button" value="Join the Chat Room!" onclick="connect();"/>
-
+    <div id="loginContainer">
+      <form onsubmit="connect(); return false;">
+        <input id="username" type="text"/>
+        <input type="submit" value="Join!"></input>
+      </form>
+    </div>
+    <div id="logoutButton">
+      <button onclick="logout(); return false">keluar</button>
+    </div>
     <div id="roomContainer">
       <div id="chatContainer"></div>
       <form onsubmit="sendMessage(); return false;">
